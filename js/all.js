@@ -1,7 +1,8 @@
-const signInDOM = document.querySelector('.js-signIn');
-const dataList = document.querySelector('.js-dataList');
+const signInDOM   = document.querySelector('.js-signIn');
+const dataList    = document.querySelector('.js-dataList');
 const productList = document.querySelector('.js-productList');
-
+const logOutDOM   = document.querySelector('.js-logOut');
+const signInForm  = document.querySelector('.js-signInForm');
 const app = {
   data: {
     url: 'https://vue3-course-api.hexschool.io',
@@ -18,6 +19,8 @@ const app = {
     axios.delete(`${this.data.url}/api/${this.data.path}/admin/product/${itemId}`).then(res => {
       console.log(res.data.message);
       this.getProduct();
+    }).catch(res => {
+      console.log(res.data.message);
     })
   },
   productRender() {
@@ -41,11 +44,6 @@ const app = {
       </tr>`;
     })
     productList.innerHTML = dataString;
-    productList.addEventListener('click', Event => {
-      if (Event.target.value === '刪除') {
-        this.deleteProduct(Event.target.dataset.id);
-      }
-    })
   },
   signIn(Event) {
     Event.preventDefault();
@@ -96,11 +94,14 @@ const app = {
   },
   created() {
     this.checkLogin();
-    const logOutDOM = document.querySelector('.js-logOut');
-    const signInForm = document.querySelector('.js-signInForm');
     // 在這層的 this 指向此物件，利用 .bind() 傳入之後就能正確抓取，否則會指向該 DOM
     signInForm.addEventListener('submit', this.signIn.bind(this));
     logOutDOM.addEventListener('click', this.logOut.bind(this));
+    productList.addEventListener('click', Event => {
+      if (Event.target.value === '刪除') {
+        this.deleteProduct(Event.target.dataset.id);
+      }
+    })
   }
 }
 app.created();
