@@ -17,8 +17,11 @@ const app = {
   },
   deleteProduct(itemId) {
     axios.delete(`${this.data.url}/api/${this.data.path}/admin/product/${itemId}`).then(res => {
-      console.log(res.data.message);
-      this.getProduct();
+      if (res.data.success) {
+        this.getProduct();
+      } else {
+        console.log(res.data.message);
+      }
     }).catch(res => {
       console.log(res.data.message);
     })
@@ -47,6 +50,8 @@ const app = {
   },
   signIn(Event) {
     Event.preventDefault();
+    // 如何利用物件解構簡化?
+    
     let userInfo = {
       username: Event.target[0].value,
       password: Event.target[1].value
@@ -55,13 +60,14 @@ const app = {
       const token = res.data.token;
       const expired = res.data.expired;
       document.cookie = `hexToken=${token}; expires=${new Date(expired)}; path=/` ;
-      if (res.data.success === false) {
-        signInDOM.classList.remove('d-none');
-        dataList.classList.add('d-none');
-      } else {
+      if (res.data.success) {
+        // 已有執行，但有時候會出不來，待修
         this.getProduct();
         signInDOM.classList.add('d-none');
         dataList.classList.remove('d-none');
+      } else {
+        signInDOM.classList.remove('d-none');
+        dataList.classList.add('d-none');
       }
       Event.target.reset();
       console.log(res.data.message);
@@ -82,13 +88,13 @@ const app = {
     const token = document.cookie.replace(/(?:(?:^|.*;\s*)hexToken\s*=\s*([^;]*).*$)|^.*$/, '$1');
     axios.defaults.headers.common['Authorization'] = token;
     axios.post(`${this.data.url}/api/user/check`).then(res => {
-      if (res.data.success === false) {
-        signInDOM.classList.remove('d-none');
-        dataList.classList.add('d-none');
-      } else {
+      if (res.data.success) {
         this.getProduct();
         signInDOM.classList.add('d-none');
         dataList.classList.remove('d-none');
+      } else {
+        signInDOM.classList.remove('d-none');
+        dataList.classList.add('d-none');
       }
     })
   },
