@@ -7,12 +7,18 @@ const app = {
   data: {
     url: 'https://vue3-course-api.hexschool.io',
     path: 'vs',
-    originProductsData: []
+    originProductsData: [],
+    hasLogin: false
   },
   getProduct() {
     axios.get(`${this.data.url}/api/${this.data.path}/admin/products?page=1`).then(res => {
-      this.data.originProductsData = res.data.products;
-      this.productRender();
+      if (this.hasLogin) {
+        this.data.originProductsData = res.data.products;
+        this.productRender();
+        this.switchLoginDOM();
+      }
+    }).catch(() => {
+      console.log('取得資料失敗');
     })
   },
   deleteProduct(itemId) {
@@ -50,36 +56,29 @@ const app = {
   },
   signIn(Event) {
     Event.preventDefault();
-    // 如何利用物件解構簡化?
-    
-    let userInfo = {
-      username: Event.target[0].value,
-      password: Event.target[1].value
-    }
-    axios.post(`${this.data.url}/admin/signin`, userInfo).then(res => {
+    let [username, password] = Event.target;
+    axios.post(`${this.data.url}/admin/signin`, {username : username.value, password : password.value}).then(res => {
       const token = res.data.token;
       const expired = res.data.expired;
       document.cookie = `hexToken=${token}; expires=${new Date(expired)}; path=/` ;
       if (res.data.success) {
-        // 已有執行，但有時候會出不來，待修
+        this.hasLogin = true
         this.getProduct();
-        signInDOM.classList.add('d-none');
-        dataList.classList.remove('d-none');
       } else {
-        signInDOM.classList.remove('d-none');
-        dataList.classList.add('d-none');
+        this.hasLogin = false
+        this.switchLoginDOM();
       }
       Event.target.reset();
       console.log(res.data.message);
     }).catch(() => {
-      signInDOM.classList.remove('d-none');
+      this.switchLoginDOM();
     })
   },
   logOut() {
     axios.post(`${this.data.url}/logout`).then(res => {
       document.cookie = `hexToken=; expires=; path=/`;
-      signInDOM.classList.remove('d-none');
-      dataList.classList.add('d-none');
+      this.hasLogin = false;
+      this.switchLoginDOM();
       this.data.originProductsData = [];
       console.log(res.data.message);
     })
@@ -89,14 +88,23 @@ const app = {
     axios.defaults.headers.common['Authorization'] = token;
     axios.post(`${this.data.url}/api/user/check`).then(res => {
       if (res.data.success) {
+        this.hasLogin = true;
+        // 若在此執行 DOM 切換，會有非同步問題
         this.getProduct();
-        signInDOM.classList.add('d-none');
-        dataList.classList.remove('d-none');
       } else {
-        signInDOM.classList.remove('d-none');
-        dataList.classList.add('d-none');
+        this.hasLogin = false;
+        this.switchLoginDOM();
       }
     })
+  },
+  switchLoginDOM() {
+    if (this.hasLogin) {
+      signInDOM.classList.add('d-none');
+      dataList.classList.remove('d-none');
+    } else {
+      signInDOM.classList.remove('d-none');
+      dataList.classList.add('d-none');
+    }
   },
   created() {
     this.checkLogin();
