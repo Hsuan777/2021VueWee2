@@ -12,10 +12,12 @@ const app = {
   },
   getProduct() {
     axios.get(`${this.data.url}/api/${this.data.path}/admin/products?page=1`).then(res => {
-      if (this.hasLogin) {
+      if (res.data.success && this.hasLogin) {
         this.data.originProductsData = res.data.products;
         this.productRender();
         this.switchLoginDOM();
+      } else {
+        console.log(res.data.message);
       }
     }).catch(() => {
       console.log('取得資料失敗');
@@ -58,8 +60,10 @@ const app = {
     Event.preventDefault();
     let [username, password] = Event.target;
     axios.post(`${this.data.url}/admin/signin`, {username : username.value, password : password.value}).then(res => {
-      const token = res.data.token;
-      const expired = res.data.expired;
+      // const token = res.data.token;
+      // const expired = res.data.expired;
+      // 改為物件解構時，指派的變數名稱必須是該物件的屬性名稱，否則值為預設值 undefined
+      const {token, expired} = res.data
       document.cookie = `hexToken=${token}; expires=${new Date(expired)}; path=/` ;
       if (res.data.success) {
         this.hasLogin = true
@@ -67,19 +71,25 @@ const app = {
       } else {
         this.hasLogin = false
         this.switchLoginDOM();
+        console.log(res.data.message);
       }
       Event.target.reset();
-      console.log(res.data.message);
     }).catch(() => {
       this.switchLoginDOM();
+      console.log(res.data.message);
     })
   },
   logOut() {
     axios.post(`${this.data.url}/logout`).then(res => {
-      document.cookie = `hexToken=; expires=; path=/`;
-      this.hasLogin = false;
-      this.switchLoginDOM();
-      this.data.originProductsData = [];
+      if (res.data.success) {
+        document.cookie = `hexToken=; expires=; path=/`;
+        this.hasLogin = false;
+        this.switchLoginDOM();
+        this.data.originProductsData = [];
+      } else {
+        console.log(res.data.message);
+      }
+    }).catch(res => {
       console.log(res.data.message);
     })
   },
@@ -94,7 +104,10 @@ const app = {
       } else {
         this.hasLogin = false;
         this.switchLoginDOM();
+        console.log(res.data.message);
       }
+    }).catch(res => {
+      console.log(res.data.message);
     })
   },
   switchLoginDOM() {
